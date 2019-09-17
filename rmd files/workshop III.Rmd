@@ -1,0 +1,213 @@
+---
+title: "Introduction to Tidyverse"
+output: github_document
+---
+
+# Introduction
+
+- The aim of this lecture is to summarise the ultimate goals of the tidyverse package, and provide a short tutorial how to manipulate datasets by using the `dplyr` package.
+
+## Tidyverse vs. base R (cont.)
+
+One point of convenience is that there is often a direct correspondence between a tidyverse command and its base R equivalent. 
+
+These invariably follow a `tidyverse::snake_case` vs `base::period.case` rule. E.g. see:
+- `?readr::read_csv` vs `?utils::read.csv`
+- `?tibble::data_frame`vs `?base::data.frame`
+- `?dplyr::if_else` vs `?base::ifelse`
+- etc.
+  
+If you call up the above examples, you'll see that the tidyverse alternative typically offers some enhancements or other useful options (and sometimes restrictions) over its base counterpart.
+
+- Remember: There are always many ways to achieve a single goal in R.
+
+### Tidyverse
+
+- Tidyverse is primarily made up of a set of powerful and useful R packages (ggplot2, dplyr, tidyr, purr, readr, and tibble)
+
+- It is a way of thinking of implementing tidy data.
+
+- Code written in tidyverse syntax is much easier to read than base R
+
+### What is tidy data
+
+- Every row corresponds to a single observational unit (indexed by country and year
+
+- Every column corresponds to a variable that is measured for each observational units (cross sectional and time dimension). For instance, the GDP and life expectancy
+for each country and over times from the `gapminder` dataset
+
+### Tidyverse packages
+
+Let's load the tidyverse meta-package and check the output.
+```{r tidyverse, message=FALSE}
+library(tidyverse)
+```
+
+We see that we have actually loaded a number of packages (which could also be loaded individually): `ggplot2`, `tibble`, `tidyr`, `readr`,`dplyr`, etc.
+
+### Tidyverse packages (cont.)
+
+- Today, however, I'm only really going to focus on one package: `dplyr`
+
+- These are the workhorse packages for cleaning and wrangling data. They are thus the ones that you will likely make the most use of (alongside `ggplot2`, which we already employed in previous presentations).
+
+- Data cleaning and wrangling occupies an enormous amount of time, no matter where you are in your research career
+
+## Tutorial 
+
+- In this tutorial, we will use the heart disease dataset that is stored in your folder named data. This data can be also downloaded directly if you are connected to the internet.
+
+- The way we are going to proceed is as follows: loading the original data and saving it as an object with a meaningful name and an origin suffix. I will only made direct manipulations to the heart disease dataset.
+
+- For futher description of the dataset [link to description of the dataset] (https://archive.ics.uci.edu/ml/datasets/heart+Disease) 
+
+
+### Dataset: heart_disease
+
+- Age (age in years)
+- Sex (1 = male; 0 = female)
+- CP (chest pain type)
+- TRESTBPS (resting blood pressure (in mm Hg on admission to the hospital))
+- CHOL (serum cholestoral in mg/dl)
+- FPS (fasting blood sugar > 120 mg/dl) (1 = true; 0 = false)
+- RESTECH (resting electrocardiographic results)
+- THALACH (maximum heart rate achieved)
+- EXANG (exercise induced angina (1 = yes; 0 = no))
+- OLDPEAK (ST depression induced by exercise relative to rest)
+- SLOPE (the slope of the peak exercise ST segment)
+- CA (number of major vessels (0-3) colored by flourosopy)
+- THAL (3 = normal; 6 = fixed defect; 7 = reversable defect)
+- TARGET (1 or 0)
+
+### Preliminaries
+
+```{r, message = FALSE}
+library(funModeling)
+library(tidyverse)
+head(heart_disease,5) 
+str(heart_disease)
+summary(heart_disease)
+sum(is.na(heart_disease))
+heart_disease_orig <- heart_disease
+```
+
+### Arrange function
+
+```{r arrange}
+# Order dataset according to the age variable: 
+d1= heart_disease %>% arrange(age)
+# you can also type without using the piping. We use head to print out only the first 5 rows in the dataset
+arrange(heart_disease, age) %>% head()
+# variable chest_pain and age:
+d2= heart_disease %>% arrange(chest_pain, age) %>% head()
+# descending order:
+d3= heart_disease %>% arrange(-age) %>% head()
+```
+
+
+### Select function
+
+```{r}
+ # Seleccionando algunas variables con `select` 
+# thal, age, chest_pain
+d4=heart_disease %>% select(thal, age, chest_pain)
+# Con el simbolo menos (`-`) eliminamos variables
+d5=d4 %>% select(-chest_pain)
+# seleccionamos 2 y luego todas
+d6=heart_disease %>% select(age, thal, chest_pain, everything())
+```
+
+
+```{r}
+# Seleccionando por tipo de dato
+d9=select_if(heart_disease, is.numeric)
+# is.character
+# is.factor
+is.character(heart_disease$age)
+```
+
+### Select function 
+
+```{r select if}
+df_status(heart_disease)
+heart_disease$gender=as.character(heart_disease$gender)
+df_status(select_if(heart_disease, is.numeric))
+df_status(select_if(heart_disease, is.factor))
+df_status(select_if(heart_disease, is.character))
+```
+
+
+### Filter function
+
+```{r}
+#With piping. Filter observations where gender = male
+heart_disease %>% filter(gender =="male") %>% head()
+#without piping
+filter(heart_disease, gender == "male")
+```
+
+
+
+### Mutate function
+
+```{r}
+# crear variable mayor a 40 años
+heart_disease2 = heart_disease %>% mutate(es_mayor_40 = age > 40)
+# ifelse(condicion, por true, por false)
+heart_disease2$nueva_var=ifelse(heart_disease$age > 40, "es mayor a 40 años", "es menor o igual a 40 años") 
+select(heart_disease2, nueva_var)
+# crear variable high o low basado en  max_heart_rate > 150
+heart_disease3=heart_disease %>% mutate(estado_heart_rate=ifelse(max_heart_rate > 150, "high", "low"))
+select(heart_disease3, max_heart_rate, estado_heart_rate)
+```
+
+
+### Missing values with R base vs. Tidyverse syntax
+
+```{r}
+# Remplazo de nulos
+df_status(heart_disease)
+v_na_1=is.na(heart_disease$num_vessels_flour)
+heart_disease$num_vessels_flour[v_na_1]=999
+```
+
+
+```{r}
+## with dplyr
+data_clean=heart_disease3 %>% mutate(num_vessels_flour2=replace_na(num_vessels_flour, 999),
+                                     thal2=replace_na(as.character(thal), "missing")) %>% select(num_vessels_flour2, thal2)
+df_status(data_clean)
+# remove missing values
+data_clean2=na.omit(heart_disease3)
+```
+
+
+
+### Group_by and summarise functions
+
+```{r}
+# obtener promedio de max_heart_rate por has_heart_disease
+group_by(heart_disease, has_heart_disease) %>% summarise(prom_hr=mean(max_heart_rate))
+# obtener promedio de num_vessels_flour por has_heart_disease
+group_by(heart_disease, has_heart_disease) %>% summarise(prom_vess=mean(num_vessels_flour, na.rm = T),
+                                                         sd_vess=sd(num_vessels_flour, na.rm = T),
+                                                         prom_hr=mean(max_heart_rate)
+                                                         )
+# agrupar solo en variables numéricas
+res=group_by(heart_disease, has_heart_disease) %>% summarise_if(is.numeric, mean, na.rm=T)
+```
+
+
+```{r}
+# agrupar solo determinadas variables
+v_vars=c("age", "max_heart_rate")
+group_by(heart_disease, has_heart_disease) %>% summarise_at(v_vars, mean, na.rm=T)
+group_by(heart_disease, has_heart_disease) %>% summarise_at(vars(age, max_heart_rate), mean, na.rm=T)
+```
+
+
+
+## Resources
+
+# dplyr official page: https://dplyr.tidyverse.org/
+# Introduction to dplyr: https://dplyr.tidyverse.org/articles/dplyr.html
