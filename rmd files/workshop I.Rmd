@@ -1,0 +1,342 @@
+---
+title: "Introduction to R and Tidyverse"
+output: github_document
+---
+
+
+# Why this workshop?
+
+Fill in the gaps left by traditional econometrics and methods classes using less flexible econometrics and statistical packages.
+
+- Practical skills that tools that will benefit your dissertation (master or doctoral) and future professional career.
+- Neglected skills like how to actually find datasets in the wild and clean them.
+
+- Data science skills are largely distinct from (and complementary to) the core 'metrics oeuvre familiar to economists.
+
+- Data viz, cleaning and wrangling; programming; cloud computation; relational databases; machine learning basics
+
+# Some research project examples
+
+
+- Globalization and suicide: (See the full code and data [here](https://www.kaggle.com/tony75/globalization-and-suicide))
+- Predicting the Body Mass Index (BMI). (See the full code and data [here](https://www.kaggle.com/tony75/predicting-bmi))
+- Missing values and Clustering: Knowledge Economy in African countries. This is beyond the scope of this course, but it might relevant for data cleaning, and description analysis: (See the full code and data [here](https://github.com/antonio1970/Clustering-Algorithms))
+- Gender wage discrimination in China. This is a very simple data visualization of wage distribution across gender: See the full code and data [here](https://www.kaggle.com/tony75/gender-wages)
+
+# Lecture outline
+
+## Introduction to R basics
+
+- Introduction: Motivation, software installation, and data visualization
+- Learning to love the shell
+- R language basics
+- Data cleaning, and wrangling with the "Tidyverse"
+
+
+## Introduction to machine learning algorithms
+
+- Supervised vs unsupervised learning
+
+- The caret package and regression models
+
+- Clustering techniques
+
+- Complete example: Using African data from the WB and WGI.
+
+# Why R and RStudio? (cont.)
+
+```{R, indeeddotcom, echo = F, fig.height = 6, fig.width = 9, dev = "svg"}
+library(tidyverse)
+# The popularity data
+pop_df <- 
+  data.frame(
+  lang = c("SQL", "Python", "R", "SAS", "Matlab", "SPSS", "Stata"),
+  n_jobs = c(107130, 66976, 48772, 25644, 11464, 3717, 1624),
+  free = c(T, T, T, F, F, F, F)
+  )
+## Plot it
+pop_df %>% 
+  mutate(lang = lang %>% factor(ordered = T)) %>%
+  ggplot(aes(x = lang, y = n_jobs, fill = free)) +
+  geom_col() +
+  geom_hline(yintercept = 0) +
+  aes(x = reorder(lang, -n_jobs), fill = reorder(free, -free)) +
+  xlab("Statistical language") +
+  scale_y_continuous(label = scales::comma) +
+  ylab("Number of jobs") +
+  labs(
+    title = "Comparing statistical languages",
+    subtitle = "Number of job postings on Indeed.com, 2019/01/06"
+    ) +
+  scale_fill_manual(
+    "Free?",
+    labels = c("True", "False"),
+    values = c("#f92672", "darkslategray")
+    ) +
+  ggthemes::theme_pander(base_size = 17) +
+  # theme_ipsum() +
+  theme(legend.position = "bottom")
+```
+
+
+
+### Data science positivism
+
+- Alongside Python, R has become the *de facto* language for data science.
+  - See: [*The Impressive Growth of R*](https://stackoverflow.blog/2017/10/10/impressive-growth-r/), [*The Popularity of Data Science Software*](http://r4stats.com/articles/popularity/)
+  
+- Open source (free!) with a global user-base spanning academia and industry.
+
+### Bridge to applied economics and other tools
+
+- Already has all of the statistics and econometrics support, and is amazingly adaptable as language to other
+programming languages and APIs.
+
+- The RStudio IDE and ecosystem allow for further, seemless integration.
+
+- It's also the language that I know best.
+
+
+
+# R vs Stata
+
+If you're coming from Stata, some additional things worth emphasizing:
+
+- Multiple objects (e.g. data frames) can exist happily in the same workspace. 
+   - No more `keep`, `preserve`, `restore` hackery.
+   - This is a direct consequence of the OOP approach.
+
+- You will load packages at the start of every new R session. Make peace with this.
+  - "Base" R comes with tons of useful in-built functions. It also provides all the tools necessary for you to write your own functions. 
+  - However, many of R's best data science functions and tools come from external packages written by other users.
+
+- R easily and infinitely parallelizes. For free.
+  - Compare the cost of a [Stata/MP](https://www.stata.com/statamp/) license, nevermind the fact that you effectively pay per core...
+
+- You don't need to `tset or xtset` your data. (Although you can too.)
+
+
+
+# Examples using ggplot2
+
+```{r gapm_plot, dev="svg"}
+library(ggplot2)
+library(gapminder) ## For the gapminder data
+ggplot(data = gapminder, mapping = aes(x = gdpPercap, y = lifeExp)) + 
+  geom_point()
+```
+
+# Brief aside: The gapminder dataset
+
+Because we're going to be plotting the [gapminder](https://github.com/jennybc/gapminder) dataset, it is helpful to know that it contains panel data on life expectancy, population size, and GDP per capita for 142 countries since the 1950s.
+
+```{r gapm}
+gapminder
+```
+
+
+---
+
+# What else? (cont.)
+
+Elaborate extension: Animation! (See the next slide for the resulting GIF.)
+```{r gganim1, eval= TRUE}
+library(gganimate)
+library(gapminder)
+library(gifski)
+ggplot(gapminder, aes(gdpPercap, lifeExp, size = pop, colour = country)) +
+  geom_point(alpha = 0.7, show.legend = FALSE) +
+  scale_colour_manual(values = country_colors) +
+  scale_size(range = c(2, 12)) +
+  scale_x_log10() +
+  facet_wrap(~continent) +
+  # Here comes the gganimate specific bits
+  labs(title = 'Year: {frame_time}', x = 'GDP per capita', y = 'life expectancy') +
+  transition_time(year) +
+  ease_aes('linear')
+```
+
+
+# What else? (cont.)
+
+There's a lot more to say, but I think we'll stop now for today's lecture.
+
+Rest assured, you will be using ggplot2 throughout the rest of this course and developing your skills along the way.
+
+In the meantime, I want you to do some reading and practice on your own. Pick either of the following (or choose among the litany of online resources) and work through their examples:
+- [Chapter 1](https://www.jaredlander.com/r-for-everyone/table-of-contents/) of *R for Everyone: Advance and Analytics and Graphics* by Jared P. Lander.
+- [Chapter 1](https://r4ds.had.co.nz/introduction.html) of *R for Data Science* by G. Grolemund and H. Wickham. (Or just try a chapter at random.) 
+
+
+
+# First steps
+
+1. Open RStudio on yours or a group member's laptop
+2. Check RStudio version (version command, mine )
+2. Click File > New File > R script. 
+
+You will see a blank section of screen in the top-left of your RStudio window. This is where you will write your first R script. This is similar to write a do file in Stata. Notice that R code is saved as a `.r file`.
+
+# Four basic areas on your screen
+
+1. The is the `script` editor as in Stata
+2. The bottom left is the `console` (you can use R interactively by typing commands as in Stata)
+3. The upper right is where you see the list of objects in your workspace. History is also there (you know at aytime what you did type in your console)
+4. The bottom right is where you find the available packages, graphical output, your file structure, and help.  
+
+### Help
+
+Getting help with R is easy. To get further information about the syntax of any R function,  just type a `?` before the function name. See the example below
+
+```{r}
+# regression function (fitting linear models by OLS)
+?lm
+```
+
+
+If you don't know exactly the name of the fuction, just use double question marks
+
+```{r}
+??cluster
+help.search("cluster")
+apropos("cluster")
+```
+
+
+Finally, the structure of the help for each R function is:
+
+1. Description
+2. Usage
+3. Arguments
+4. Value
+5. References
+
+### Console
+The bottom-left of the screen has a tab called "Console". This is basically a very fancy calculator.
+
+Try the basic calculator by typing something like
+```{r}
+2+2
+```
+
+Or even something fancier like
+```{r}
+sqrt(pi)
+b <- 1.4156
+sqrt(b)
+```
+
+
+### More options
+
+
+```{r decimals}
+# We can use the command options digits to set up the number of decimals as you wish
+options(digits = 3)
+sqrt(10)
+ceiling(3.5) # round up to next integer
+floor(3.5) # round down to the next integer
+log(100)  # natural log
+exp(2)  # exponents
+```
+
+You can also test for equality. True and false are the keywords. Notice that T and F are synonyms but are discouraged.
+TRUE 
+FALSE
+
+```{r}
+1==2 # Equality return TRUE if equal
+1 !=2 # Return false if unequal
+10 >= 9  # Greater than
+4<=1 # Less than
+```
+
+
+### Objects and basic R
+
+R is a oriented object language. For R, everything is an object, and each object has its own name.
+
+1. To remove any particular object from the current session employ `rm()`
+2. To list all objects in your workspace use `ls()`
+3. To remove all objects from your workingspace just type `rm(list =ls())`
+
+```{r}
+x<-2 # Creating an object
+ls()
+rm(list = ls())
+```
+
+
+Lastly, most of the them when using variables in a dataframe, you refer to them by using the `$`symbol. This can be avoided by using the `attach` command. This will be explained more in detail in next labs.
+
+Just as an example, let us load one of the built in datasets in R, `mpg´ from the **ggplot2 package**. This dataset contains observations collected by the US Environmental Protection Agency on 38 models of cars. 
+```{r}
+data(mtcars)
+mean(mtcars$mpg) # Notice that we get access to the variables with the dollar symbol
+attach(mtcars)
+mean(mpg) # there is no need to use the dollar symbol
+```
+
+### Working directory
+
+```{r}
+getwd() # to check your current working directory
+# setwd() # You can also use the menu  session and then set working directory, otherwise you need to specify the entire path
+```
+
+### Packages
+R makes extensive use of third-party packages. We will not get into the details right now, but for this class, you will need to install a few of these. Installing packages is quite easy. Type the following two lines of code at the very top of your script:
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+install.packages("tidyverse", repos='http://cran.us.r-project.org')
+install.packages("skimr", repos='http://cran.us.r-project.org')
+install.packages("wooldridge", repos='http://cran.us.r-project.org')
+install.packages("learnr", repos='http://cran.us.r-project.org')
+```
+
+You've just installed two basic packages. We can also check it out by using the following syntax
+
+```{r, eval= FALSE}
+installed.packages()
+```
+
+
+
+
+Basically, you have downloaded them onto your laptop. Just like with other software on your computer, you only need to do the installation once. However, you still need to tell R that you will be using the packages (by using the `library`command). Add the following two lines of code to your script (below the first two lines you wrote). Notice how there are no quotation marks inside the parenthese this time.
+
+Whenever you start over a new Rstudio session, you need to load the appropriate libraries.
+
+In RStudio, you can also install packages by using the R interface. You will find it at Tools -> Install Package, and there you will get a pop--up window to type the package you want to install
+
+
+### Running a script
+To execute the script, click on the word "Source" in the top-right corner of the top-left window pane. This will take what is in your script and automatically send it to the console (as if you typed it directly into the console)
+
+To save the script, click on the disk icon at the top of your script pane (but not the disk icon at the very top of RStudio). Name your script `ICL1_XYZ.R` where `XYZ` are your initials.
+
+### Commenting
+Now, put a hashtag (#) in front of the first two lines of code in your script, like so:
+```{r}
+#install.packages("tidyverse")
+#install.packages("skimr")
+#install.packages("wooldridge")
+```
+
+The hashtag is how you tell R not to run the code in your script. This is known as "commenting" your code.
+
+At the very top of your script, type the names of your group members with a hashtag in front.
+
+### Citation R and packages 
+
+If you need to cite R, just use
+
+```{r}
+citation()
+```
+
+if for instance, you need to cite one of the packages, then use
+
+```{r}
+citation(package = "ggplot2")
+```

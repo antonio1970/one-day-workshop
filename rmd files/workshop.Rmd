@@ -1,0 +1,131 @@
+---
+title: "Introduction to Machine Learning. Practical examples"
+output: github_document
+---
+
+
+
+# Introduction
+
+What is **machine learning**? For our purposes, machine learning is a collection of methods for teaching computers to make and improve predictions/estimations based on data. 
+The way this is achieved is by learning a **model**, which is a function deduced from our data. For instance, in the case of email spam classification, we learn a model that will tell us, for a given (and previously unseen) email, what is the probability of it being spam. This model is deduced from a collection of emails which is *annotated*, meaning that we know whether these emails were spam or not. This class of machine learning problems is called **supervised learning** because we have, for each data point, an additional indication (provided by the "supervisor") of the class to which the data point belongs, as in this example, or another value associated to it. Another example of supervised learning is estimating house price given surface, location, size, etc.
+
+In contrast, **unsupervised learning** is concerned with problems on which we have data, but no additional information about it. An example is market segmentation: we have attributes of our customers and we would like to "organize" them (perhaps for a targeted campaign), but we do not know a priori to which segment they belong, nor how many segments are there.
+
+These notes provide practical examples of machine learning to highlight different use cases and situations, both in supervised and unsupervised learning.
+
+## General machine learning strategies
+
+Suppose we are given some data, and we (somehow) derive a model of that data. How do we know if the model is "good"? And what does that even mean?
+
+### Model validation
+We typically split data into training and test data sets:
+
+- **Train Set:** these data are used to estimate model parameters and to pick the values of the complexity parameter(s) for the model.
+
+- **Test Set:** these data can be used to get an independent assessment of model efficacy. They should not be used during model training.
+
+
+In the test set, we measure the performance of the model with different **metrics**. For instance, for classification problems (such as the email spam example) we look into how many errors did the model do: in the test set, we have the **ground truth** (we know already if the email is spam or not) so we compare this ground truth with the prediction of our model.
+
+There is a tradeoff here of course, because too much spent in training won't allow us to get a good assessment of predictive performance. We may find a model that fits the training data very well, but is not generalizable (overfitting). If we use too much data for testing, we won't get a good assessment of model parameters. 
+
+A common strategy is to use around 20% of the data for testing and the rest for training, but this is not carved in stone. In many situations we may use only 10% of the data for testing. 
+
+When splitting in training and testing sets, we should be careful that the split is **stratified**, meaning that we do not end with disproportionate data! For instance, in the email spam example, we should have a similar proportion of spam emails on both the train and the test sets.
+
+There are other data splitting schemes that are applied to the *train* set. These schemes attempt to replicate slightly different versions of the train set, doing an additional data split, on which the model is evaluated. The most common is *k-fold cross validation* which means that the training set is split in *k* parts, and the model is trained successively in *k-1* and evaluated in the remaining part.
+
+## Regression model
+
+
+```{r}
+library(ggplot2)
+data(diamonds)
+head(diamonds)
+```
+
+Let us create a simple regression model where we want to explain the price of diamonds as a function of some characteristics. For that purpose, we use the `lm` function. 
+
+```{r}
+model<- lm(price~., data = diamonds)
+summary(model)
+
+```
+
+```{r}
+# Generate predictions for the price and stored in p
+p <- predict (model, diamonds)
+
+error <- p-diamonds$price
+  
+# Compute the classical accuracy measure, the Root means squared error (RMSE()
+
+rmse <- sqrt(mean(error^2))
+rmse
+```
+
+## Overfitting
+
+- The previous model suffers from `overfitting`. The model does a very good job with the train dataset and perform poorly with a test dataset. One way to avoid overfitting is to
+generate predictions with a new dataset which the algorithm does not know. In other words, the model cannot be validated with an external dataset.
+
+- To address this issue, we can split our initial dataset into separate training and testing dataset. With this approach, we can find out how well our model performs with a completely new dataset
+
+- For that purpose, we will employ the `caret` package developed by Max Kuhn. See the following link for further details [link]('http://topepo.github.io/caret/index.html')
+
+```{r}
+citation('caret')
+```
+
+#Using the caret package
+
+- In this example, we are going to use the syntax of the caret package. For that purpose, we can use the `createDataPartition` function. For our purpose, we will lillustrate this situation with R base.
+
+
+```{r}
+set.seed(3456)
+split <- round(nrow(diamonds)*0.80) # We generate an index for the observations
+train <-diamonds[1:split,] # Let us try 80/20 split, 80 train
+test <- diamonds [(split+1):nrow(diamonds), ] # 20 % test dataset
+
+```
+
+Now, we have randomly split training and test dataset, and we can fit a linear model as in previous chunks using the `lm` function again. Recall that we fit our regression model with the training data set, and we generate out of sample predictions with our test dataset
+
+```{r}
+model1 <-lm(price~., data = train)
+p<- predict (model1, test)
+```
+
+now, we compute the errors, and our metric, RMSE
+
+```{r}
+error1 <- p-test$price
+rmse1 <- sqrt(mean(error1^2))
+rmse1
+```
+
+# Cross validation
+
+In our previous example, we split into only one test dataset. Nevertheles, this process is quite sensitive to the presence of any outlier. A better approach to a single split train-test datasets, it is to split the dataset into multiple test sets, and take the average of RMSE across the different samples. That is what is named `k-folder cross validation`. This give us a more precise estimate of the out of sample estimate error. let us see how it works, imagine we split the dataset into `k` folders equal to 5.
+
+```{r}
+# load caret library
+library (caret)
+# Fit lm model using 10-fold CV: model
+model <- train(price ~., diamonds,
+  method = "lm",
+  trControl = trainControl(
+    method = "cv", 
+    number = 10,
+    verboseIter = TRUE
+  )
+)
+
+# Print model to console
+
+model
+```
+
+
